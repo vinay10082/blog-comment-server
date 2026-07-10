@@ -1,0 +1,14 @@
+# Stage 1: Compile the Go static binary
+FROM golang:1.22-alpine AS build
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /blog-comment-server
+
+# Stage 2: Run using a minimal distroless alpine image
+FROM alpine:latest
+WORKDIR /
+COPY --from=build /blog-comment-server /blog-comment-server
+EXPOSE 8082
+ENTRYPOINT ["/blog-comment-server"]
