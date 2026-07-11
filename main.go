@@ -1,15 +1,49 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading it. Continuing with environment variables.")
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8082"
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Println("WARNING: DATABASE_URL is not set")
+	} else {
+		db, err := sql.Open("postgres", dbURL)
+		if err != nil {
+			log.Printf("Error opening database: %v", err)
+			os.Exit(1)
+		}
+
+		if err := db.Ping(); err != nil {
+			_ = db.Close()
+			log.Printf("Error connecting to the database: %v", err)
+			os.Exit(1)
+		}
+
+		defer func() {
+			if err := db.Close(); err != nil {
+				log.Printf("Error closing database: %v", err)
+			}
+		}()
+		fmt.Println("Successfully connected to the database!")
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
