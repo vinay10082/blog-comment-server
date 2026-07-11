@@ -28,13 +28,21 @@ func main() {
 	} else {
 		db, err := sql.Open("postgres", dbURL)
 		if err != nil {
-			log.Fatalf("Error opening database: %v", err)
+			log.Printf("Error opening database: %v", err)
+			os.Exit(1)
 		}
-		defer db.Close()
 
-		if err = db.Ping(); err != nil {
-			log.Fatalf("Error connecting to the database: %v", err)
+		if err := db.Ping(); err != nil {
+			_ = db.Close()
+			log.Printf("Error connecting to the database: %v", err)
+			os.Exit(1)
 		}
+
+		defer func() {
+			if err := db.Close(); err != nil {
+				log.Printf("Error closing database: %v", err)
+			}
+		}()
 		fmt.Println("Successfully connected to the database!")
 	}
 
