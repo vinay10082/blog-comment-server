@@ -1,0 +1,46 @@
+name: Deploy Comment Server (Go) to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Build Go Application
+        run: GOOS=linux GOARCH=amd64 go build -o blog-comment-server
+
+      - name: Deploy to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "blog-comment-server"
+          target: "~/deploy/blog-comment-server"
+
+      - name: Restart Application on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            pkill -f 'blog-comment-server' || true
+            cd ~/deploy/blog-comment-server
+            # Create .env dynamically from secrets
+            echo "DATABASE_URL=postgres://${{ secrets.SPRING_DATASOURCE_USERNAME }}:${{ secrets.SPRING_DATASOURCE_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:${{ secrets.RDS_PORT }}/postgres" > .env
+            chmod +x blog-comment-server
+            nohup ./blog-comment-server > app.log 2>&1 &
