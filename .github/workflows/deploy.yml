@@ -43,4 +43,5 @@ jobs:
             # Create .env dynamically from secrets
             echo "DATABASE_URL=postgres://${{ secrets.SPRING_DATASOURCE_USERNAME }}:${{ secrets.SPRING_DATASOURCE_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:${{ secrets.RDS_PORT }}/postgres" > .env
             chmod +x blog-comment-server
-            nohup ./blog-comment-server > app.log 2>&1 &
+            nohup ./blog-comment-server </dev/null > app.log 2>&1 &
+            sleep 5
