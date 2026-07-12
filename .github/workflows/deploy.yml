@@ -46,11 +46,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT,JWT_SECRET,ALLOWED_ORIGINS
           script: |
-            pkill -f '[b]log-comment-server' || true
             cd ~/deploy/blog-comment-server
             echo "DATABASE_URL=postgres://$SPRING_DATASOURCE_USERNAME:$SPRING_DATASOURCE_PASSWORD@$RDS_ENDPOINT:$RDS_PORT/postgres" > .env
             echo "JWT_SECRET=$JWT_SECRET" >> .env
             echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env
             chmod +x blog-comment-server
-            nohup ./blog-comment-server </dev/null > app.log 2>&1 &
-            sleep 5
+            sudo systemctl restart blog-comment-server
