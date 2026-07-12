@@ -53,5 +53,4 @@ jobs:
             echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env
             chmod +x blog-comment-server
             nohup ./blog-comment-server </dev/null > app.log 2>&1 &
-            disown
-            exit 0
+            sleep 5
