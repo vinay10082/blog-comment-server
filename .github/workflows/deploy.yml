@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -33,15 +33,20 @@ jobs:
 
       - name: Restart Application on EC2
         uses: appleboy/ssh-action@master
+        env:
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+          RDS_PORT: ${{ secrets.RDS_PORT }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT
           script: |
             pkill -f 'blog-comment-server' || true
             cd ~/deploy/blog-comment-server
-            # Create .env dynamically from secrets
-            echo "DATABASE_URL=postgres://${{ secrets.SPRING_DATASOURCE_USERNAME }}:${{ secrets.SPRING_DATASOURCE_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:${{ secrets.RDS_PORT }}/postgres" > .env
+            echo "DATABASE_URL=postgres://$SPRING_DATASOURCE_USERNAME:$SPRING_DATASOURCE_PASSWORD@$RDS_ENDPOINT:$RDS_PORT/postgres" > .env
             chmod +x blog-comment-server
             nohup ./blog-comment-server </dev/null > app.log 2>&1 &
             sleep 5
