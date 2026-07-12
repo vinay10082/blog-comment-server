@@ -44,7 +44,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT
           script: |
-            pkill -f '[b]log-comment-server' || true
+            for pid in $(pgrep blog-comment || true); do kill -15 $pid || true; done
             sleep 2
             cd ~/deploy/blog-comment-server
             echo "DATABASE_URL=postgres://$SPRING_DATASOURCE_USERNAME:$SPRING_DATASOURCE_PASSWORD@$RDS_ENDPOINT:$RDS_PORT/postgres" > .env
