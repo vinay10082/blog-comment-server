@@ -45,8 +45,10 @@ jobs:
           envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT
           script: |
             pkill -f '[b]log-comment-server' || true
+            sleep 2
             cd ~/deploy/blog-comment-server
             echo "DATABASE_URL=postgres://$SPRING_DATASOURCE_USERNAME:$SPRING_DATASOURCE_PASSWORD@$RDS_ENDPOINT:$RDS_PORT/postgres" > .env
             chmod +x blog-comment-server
             nohup ./blog-comment-server </dev/null > app.log 2>&1 &
-            sleep 5
+            disown
+            exit 0
