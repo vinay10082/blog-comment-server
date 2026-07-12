@@ -25,12 +25,18 @@ type Comment struct {
 }
 
 var db *sql.DB
-var jwtSecret = []byte("blog-secret-key-must-be-very-long-and-secure-at-least-256-bits")
+var jwtSecret []byte
 
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found or error loading it. Continuing with environment variables.")
 	}
+
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+	jwtSecret = []byte(secret)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -86,21 +92,40 @@ func main() {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
-	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
-	if allowedOrigins == "" {
-		allowedOrigins = "http://localhost:4200"
+	allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
+	if allowedOriginsStr == "" {
+		allowedOriginsStr = "http://localhost:4200"
+	}
+
+	origins := strings.Split(allowedOriginsStr, ",")
+	allowAll := false
+	for _, o := range origins {
+		if strings.TrimSpace(o) == "*" {
+			allowAll = true
+			break
+		}
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		// Simple check for multiple origins if needed, otherwise just set it directly
-		if strings.Contains(allowedOrigins, origin) || allowedOrigins == "*" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		} else {
-			// Fallback to exactly what's configured
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+
+		w.Header().Add("Vary", "Origin")
+
+		if allowAll {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		} else if origin != "" {
+			allowed := false
+			for _, o := range origins {
+				if strings.TrimSpace(o) == origin {
+					allowed = true
+					break
+				}
+			}
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
 		}
-		
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == "OPTIONS" {

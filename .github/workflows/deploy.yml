@@ -38,16 +38,19 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
           RDS_PORT: ${{ secrets.RDS_PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT
+          envs: SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,RDS_ENDPOINT,RDS_PORT,JWT_SECRET,ALLOWED_ORIGINS
           script: |
-            for pid in $(pgrep blog-comment || true); do kill -15 $pid || true; done
-            sleep 2
+            pkill -f 'blog-comment-server' || true
             cd ~/deploy/blog-comment-server
             echo "DATABASE_URL=postgres://$SPRING_DATASOURCE_USERNAME:$SPRING_DATASOURCE_PASSWORD@$RDS_ENDPOINT:$RDS_PORT/postgres" > .env
+            echo "JWT_SECRET=$JWT_SECRET" >> .env
+            echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env
             chmod +x blog-comment-server
             nohup ./blog-comment-server </dev/null > app.log 2>&1 &
             disown
