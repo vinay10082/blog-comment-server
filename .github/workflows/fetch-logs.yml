@@ -1,0 +1,30 @@
+name: Fetch EC2 Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Systemd Logs
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "==== SYSTEMD STATUS ===="
+            sudo systemctl status blog-comment-server -l || true
+            echo "==== EXTRACT DB HOST ===="
+            DB_URL=$(grep DATABASE_URL ~/deploy/blog-comment-server/.env | cut -d '=' -f2)
+            # Remove postgres://
+            DB_HOST_PORT=$(echo $DB_URL | sed 's/postgres:\/\///' | cut -d '/' -f1)
+            DB_HOST=$(echo $DB_HOST_PORT | cut -d ':' -f1 | cut -d '@' -f2)
+            echo "Extracted DB Host: $DB_HOST"
+            echo "==== NSLOOKUP ===="
+            nslookup $DB_HOST || true
+            echo "==== NETCAT PORT TEST ===="
+            nc -zv -w 5 $DB_HOST 5432 || true
+            echo "==== JOURNALCTL LOGS ===="
+            sudo journalctl -u blog-comment-server -n 100 --no-pager || true
