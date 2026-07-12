@@ -94,7 +94,7 @@ func main() {
 func corsMiddleware(next http.Handler) http.Handler {
 	allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
 	if allowedOriginsStr == "" {
-		allowedOriginsStr = "http://localhost:4200"
+		allowedOriginsStr = "http://localhost:4200,https://dnduwlb2bzns8.cloudfront.net"
 	}
 
 	origins := strings.Split(allowedOriginsStr, ",")
