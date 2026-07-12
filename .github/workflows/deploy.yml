@@ -52,3 +52,8 @@ jobs:
             echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env
             chmod +x blog-comment-server
             sudo systemctl restart blog-comment-server
+            sleep 5
+            echo "==== SYSTEMD STATUS ===="
+            sudo systemctl status blog-comment-server -l || true
+            echo "==== JOURNALCTL LOGS ===="
+            sudo journalctl -u blog-comment-server -n 100 --no-pager || true
